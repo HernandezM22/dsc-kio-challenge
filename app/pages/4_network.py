@@ -7,12 +7,14 @@ from sklearn.neighbors import KernelDensity
 import sranodec as anom
 import numpy as np
 
+# Set the initial page configurations
 st.set_page_config(
     page_title="Network Monitoring",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# All markdowns show documentation
 st.markdown('## The data')
 st.markdown('The data for this particular system is divided into node, which is a commonality among all of the three systems, incoming traffic in bytes or **in**, and outgoing traffic in bytes or **out**')
 st.markdown('For the data we did a resampling of 1 minute. We saw that updates came once every 20 seconds, so we decided to compress the data to make it easier to read.')
@@ -21,28 +23,32 @@ st.markdown('To standarize data among all nodes we decided to change in and out 
 st.title("Network Monitoring")
 
 with st.spinner("Cargando, espera..."):
-    network = pd.read_pickle("../data/network.pkl")
+    # Load data
+    network = pd.read_pickle("data/network.pkl")
+    # Change our time variable to datetime
     network["timestamp"] = network["timestamp"].apply(lambda x: dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%fZ'))
+    # Resample our data to have it every 1 minute instead of every 10 seconds
     network = network.resample('1min', on="timestamp").agg("first").ffill()
+    # standarize the network incomming and outgoing traffic with percentages.
     network['in_pct'] = (network['network.in.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
     network['out_pct'] = (network['network.out.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
-    network['timestamp'] = network.index
-    network = network.dropna()
+    network['timestamp'] = network.index # Create a column for our time index because Altair library cannot reference index
+    network = network.dropna() # Eliminate nas because altair cannot work with nas (around 20k)
 
-
+# Create a filter for each server (I call the nodes)
 option = st.selectbox(
     'Chose a server',
     network.node.unique())
-
+# Create a line chart for our incoming traffic percentage for selected node.
 st.line_chart(network[network['node'] == option]['in_pct'])
-
+#Display our dataframe
 st.dataframe(network)
 st.subheader('Exploratory Analysis')
 
 st.markdown('To understand the data we first wrote a function called `plot_network_info`, which shows us the data of each of the nodes in a time series. This was usefull for we were')
 st.markdown('Able to see periodicity and see some clear examples of outliers. After that function came a lineplot comparison where we utilize seabron to visualize the change in time')
 st.markdown('of all the nodes against each other and can start to get a sense of wheter it\'s related or not.' )
-
+# Line chart for all our servers to better understand 
 c = alt.Chart(network).mark_line().encode(
     x='timestamp',
     y='in_pct',
@@ -97,10 +103,12 @@ with st.spinner("Ajustando modelo, espera..."):
     # if timerange:
     #     test_signal = test_signal[(test_signal.index > timerange[0]) & (test_signal.index < timerange[1])]
     
-
+    # Generate the spectral anomaly score for incomming and outgoing traffic
     score_in = spec.generate_anomaly_score(network['in_pct'])
     score_out = spec.generate_anomaly_score(network['out_pct'])
 
+
+    # Select only those were we are 99% confident of the point being an outlier.
     index_changes_in = np.where(score_in > np.percentile(score_in, 99))[0]
     index_changes_out = np.where(score_out > np.percentile(score_out, 99))[0]
 
