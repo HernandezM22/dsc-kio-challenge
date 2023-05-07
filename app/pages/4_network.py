@@ -24,12 +24,17 @@ with st.spinner("Cargando, espera..."):
     network = pd.read_pickle("../data/network.pkl")
     network["timestamp"] = network["timestamp"].apply(lambda x: dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%fZ'))
     network = network.resample('1min', on="timestamp").agg("first").ffill()
-    network['in.pct'] = (network['network.in.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
-    network['out.pct'] = (network['network.out.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
+    network['in_pct'] = (network['network.in.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
+    network['out_pct'] = (network['network.out.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
     network['timestamp'] = network.index
     network = network.dropna()
 
-st.line_chart(network['in.pct'])
+
+option = st.selectbox(
+    'Chose a server',
+    network.node.unique())
+
+st.line_chart(network[network['node'] == option]['in_pct'])
 
 st.dataframe(network)
 st.subheader('Exploratory Analysis')
@@ -40,7 +45,7 @@ st.markdown('of all the nodes against each other and can start to get a sense of
 
 c = alt.Chart(network).mark_line().encode(
     x='timestamp',
-    y='in.pct',
+    y='in_pct',
     color='node:N')
 
 st.altair_chart(c, use_container_width=True)
@@ -93,36 +98,37 @@ with st.spinner("Ajustando modelo, espera..."):
     #     test_signal = test_signal[(test_signal.index > timerange[0]) & (test_signal.index < timerange[1])]
     
 
-    score_in = spec.generate_anomaly_score(network['in.pct'])
-    score_out = spec.generate_anomaly_score(network['out.pct'])
+    score_in = spec.generate_anomaly_score(network['in_pct'])
+    score_out = spec.generate_anomaly_score(network['out_pct'])
 
     index_changes_in = np.where(score_in > np.percentile(score_in, 99))[0]
     index_changes_out = np.where(score_out > np.percentile(score_out, 99))[0]
 
 
-c = alt.Chart(network, title="Percentage of incoming traffic").mark_line().encode(
+
+d = alt.Chart(network[network['node'] == option], title="Percentage of incoming traffic").mark_line().encode(
     x='timestamp',
-    y='in.pct'
+    y='in_pct'
 )
 
-d = alt.Chart(network, title="Percentage of outgoing traffic").mark_line().encode(
+e = alt.Chart(network[network['node'] == option], title="Percentage of outgoing traffic").mark_line().encode(
     x='timestamp',
-    y='out.pct'
+    y='out_pct'
 )    
 
 
-e = alt.Chart(network.iloc[index_changes_in]).mark_circle(size=60).encode(
+f = alt.Chart(network.iloc[index_changes_in][network['node'] == option]).mark_circle(size=60).encode(
     x = 'timestamp',
-    y = 'in.pct',
-    color=alt.value('red')
-)
-
-st.altair_chart(c+e, use_container_width=True)
-
-f = alt.Chart(network.iloc[index_changes_out]).mark_circle(size=60).encode(
-    x = 'timestamp',
-    y = 'out.pct',
+    y = 'in_pct',
     color=alt.value('red')
 )
 
 st.altair_chart(d+f, use_container_width=True)
+
+g = alt.Chart(network.iloc[index_changes_out][network['node'] == option]).mark_circle(size=60).encode(
+    x = 'timestamp',
+    y = 'out_pct',
+    color=alt.value('red')
+)
+
+st.altair_chart(e+g, use_container_width=True)
