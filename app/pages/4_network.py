@@ -21,7 +21,7 @@ st.markdown('To standarize data among all nodes we decided to change in and out 
 st.title("Network Monitoring")
 
 with st.spinner("Cargando, espera..."):
-    network = pd.read_pickle("../data/network.pkl")
+    network = pd.read_pickle("data/network.pkl")
     network["timestamp"] = network["timestamp"].apply(lambda x: dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%fZ'))
     network = network.resample('1min', on="timestamp").agg("first").ffill()
     network['in_pct'] = (network['network.in.bytes'] / (network['network.in.bytes'] + network['network.out.bytes']))*100
