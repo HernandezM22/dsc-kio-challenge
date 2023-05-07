@@ -76,15 +76,26 @@ with st.spinner("Ajustando modelo, espera..."):
     c = alt.Chart(network['in.pct'], title="Percentage of incoming traffic").mark_line().encode(
     x='timestamp',
     y='in.pct')
+    
     d = alt.Chart(network['out.pct'], title="Percentage of outgoing traffic").mark_line().econde(
         x='timestamp',
         y='out.pct'
+
+    index_changes_in = np.where(score_in > np.percentile(score_in, 99))[0]
+    index_changes_out = np.where(score_out > np.percentile(score_out, 99))[0]
+    
+    e = alt.Chart(score_in).mark_circle(size=60).encode(
+        x = network['in.pct'].iloc[index_changes_in].index,
+        y = network['in.pct'].iloc[index_changes_in],
+        color='green'
     )
-    e = alt.Chart(score_in).sc
 
-    st.altair_chart(c+d, use_container_width=True)
+    st.altair_chart(c+e, use_container_width=True)
 
-    d = alt.Chart(cpu2[cpu2['is_anomaly'] == -1]).mark_point(color='red', size=50).encode(
-    x='timestamp',
-    y='user_delta'
-)
+    f = alt.Chart(score_out).mark_circle(size=60).encode(
+        x = network['in.pct'].iloc[index_changes_out].index,
+        y = network['in.pct'].iloc[index_changes_out],
+        color='green'
+    )
+
+    st.altair_chart(d+f, use_container_width=True)
