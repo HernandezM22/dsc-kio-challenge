@@ -96,3 +96,28 @@ g = alt.Chart(new_df).mark_line(color="red").encode(
 
 st.altair_chart(f+g, use_container_width=True)
 
+st.subheader("Per-server view")
+option = st.selectbox(
+    'Chose a server',
+    cpu.node.unique())
+st.subheader("Standardized usage")
+
+st.line_chart(cpu[cpu["node"]==option]["user_st"])
+
+st.subheader("First order difference")
+
+st.line_chart(cpu[cpu["node"]==option]["user_delta"])
+
+st.subheader("Anomaly detection")
+
+c = alt.Chart(cpu2[cpu2["node"] == option]).mark_line().encode(
+    x='timestamp',
+    y='user_delta')
+
+d = alt.Chart(cpu2[(cpu2['is_anomaly'] == -1) & (cpu2["node"]==option)]).mark_point(color='red', size=50).encode(
+    x='timestamp',
+    y='user_delta'
+)
+
+st.altair_chart(c+d, use_container_width=True)
+
