@@ -14,6 +14,18 @@ st.set_page_config(
 
 st.title("Memory Monitoring")
 
+st.write("After receiving the original .csv file, we decided to separate it by event type")
+st.write("Focusing on the events flagged as 'memory', first we divided this dataset by nodes, because not every node has the same behaviour.")
+st.write("Having this subsets, we began performing an EDA.")
+st.write("We had entries every 10 seconds approximately, we resampled this into the first entry of every minute, now having time frequencies every minute.")
+
+
+st.write("We focused on analizing the percentage of memory used, specifically the change of this VARIABLE every minute. to detect anomalies. Meaning greater changes in this, would determine the possibility of an existing anomaly.")
+
+st.write("Using unsupervised outlier detection algorithm, we used Isolation Forest. Which focuses on how far or isolated the data is from the rest.")
+
+st.write("For the forecast, we use montecarlo simulation, were the resulting values are the mean of the several generated paths.")
+
 with st.spinner("Cargando, espera..."):
     memory = pd.read_pickle("app/data/memory.pkl")
     memory["timestamp"] = memory["timestamp"].apply(lambda x: dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%fZ'))
