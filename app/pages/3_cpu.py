@@ -84,8 +84,6 @@ with st.spinner("Realizando predicciones, espera..."):
 
     new_df["mean_traj"] = new_df.mean(axis=1)
 
-st.dataframe(new_df)
-
 
 f = alt.Chart(cpu2[-100:]).mark_line().encode(
     x='timestamp',
